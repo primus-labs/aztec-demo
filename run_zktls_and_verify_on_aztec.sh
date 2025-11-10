@@ -10,4 +10,11 @@ node src/demo_binance.js
 
 echo "Verify on Aztec chain"
 cd ${curdir}/js_test/
-yarn start ../dvc_client/binance-attestation.json
+# # deoploy + verify
+# yarn start ../dvc_client/binance-attestation.json
+
+# # deploy contracts (could be deployed once)
+# yarn start:deploy
+
+# verify attestation
+yarn start:verify ../dvc_client/binance-attestation.json

@@ -2,19 +2,15 @@
 import fs from "fs";
 import { keccak_256 } from "@noble/hashes/sha3";
 import { secp256k1 } from "@noble/curves/secp256k1";
-import { encodePacked, padTo } from "./lib/encoding";
-import { normalizeV } from "./lib/crypto";
+import { encodePacked } from "./lib/encoding";
 import { AttVerifierContract, SuccessEvent } from "./bindings/AttVerifier.js";
 import { getInitialTestAccountsData } from "@aztec/accounts/testing";
 import { TestWallet } from "@aztec/test-wallet/server";
-import { createStore } from "@aztec/kv-store/lmdb";
-import { createPXE, getPXEConfig, PXE } from "@aztec/pxe/server";
+import { Fr as aztec_fr } from "@aztec/aztec.js/fields";
 import { BusinessProgramContract } from "./bindings/BusinessProgram.js";
 import { performance } from "perf_hooks";
-import { createAztecNodeClient, getDecodedPublicEvents } from "@aztec/aztec.js";
+import { AztecAddress, createAztecNodeClient, getContractInstanceFromInstantiationParams, getDecodedPublicEvents } from "@aztec/aztec.js";
 import { Barretenberg, Fr } from "@aztec/bb.js";
-import { url } from "inspector";
-import { error } from "console";
 
 
 const MAX_RESPONSE_NUM = 2;
@@ -22,28 +18,33 @@ const AllOWED_URL = ["https://api.binance.com/api/v3/account", "https://www.okx.
 const ATT_PATH = process.argv[2] ?? "testdata/eth_hash.json";
 
 const node = createAztecNodeClient("http://localhost:8080");
-// const l1Contracts = await node.getL1ContractAddresses();
-
-// const config = getPXEConfig();
-// const fullConfig = { ...config, l1Contracts };
-// fullConfig.proverEnabled = true;
-
-// const store = await createStore("pxe", {
-//   dataDirectory: "store",
-//   dataStoreMapSizeKB: 1e6,
-// });
-// const pxe = await createPXE(node, fullConfig, { store });
-// await waitForPXE(pxe);
 
 const wallet = await TestWallet.create(node);
-const [aliceAccount, bobAccount] = await getInitialTestAccountsData();
+const [aliceAccount] = await getInitialTestAccountsData();
 let alice = await wallet.createSchnorrAccount(aliceAccount.secret, aliceAccount.salt);
-let bob = await wallet.createSchnorrAccount(bobAccount.secret, bobAccount.salt);
 
-// deploy attVerifierContract
-const attVerifierContract = await AttVerifierContract.deploy(wallet).send({ from: aliceAccount.address })
-  .deployed();
-console.log("deployed attverifier");
+// load contract instances data from JSON
+const contract_instances_raw = fs.readFileSync("deployed_contract.json", "utf-8");
+const contract_instances = JSON.parse(contract_instances_raw);
+const att_instance_data = contract_instances.attVerifierContract;
+const bp_instance_data = contract_instances.businessProgram;
+
+// register attVerifierContract to the current wallet
+const instance_a = await getContractInstanceFromInstantiationParams(AttVerifierContract.artifact, {
+  constructorArgs: att_instance_data.constructorArgs,
+  salt: aztec_fr.fromString(att_instance_data.salt),
+  deployer: AztecAddress.fromString(att_instance_data.deployer),
+});
+const registered_instance_a = await wallet.registerContract(instance_a, AttVerifierContract.artifact);
+const attVerifierContract = await AttVerifierContract.at(registered_instance_a.address, wallet)
+// register BusinessProgramContract to the current wallet
+const instance_b = await getContractInstanceFromInstantiationParams(BusinessProgramContract.artifact, {
+  constructorArgs: bp_instance_data.constructorArgs,
+  salt: aztec_fr.fromString(bp_instance_data.salt),
+  deployer: AztecAddress.fromString(bp_instance_data.deployer),
+});
+const registered_instance_b = await wallet.registerContract(instance_b, BusinessProgramContract.artifact);
+
 
 // load attestation testdata
 const obj = JSON.parse(fs.readFileSync(ATT_PATH, "utf-8"));
@@ -160,12 +161,6 @@ for (let url of allowedUrls) {
   hashedUrls.push(hashBigInt);
 }
 
-// deploy business program
-const businessProgram = await BusinessProgramContract.deploy(wallet, alice.address, hashedUrls)
-  .send({ from: aliceAccount.address }) // testAccount has fee juice and is registered in the deployer_wallet
-  .deployed();
-console.log("deployed business program");
-
 console.log("start verify");
 const start = performance.now();
 let result: any;
@@ -179,7 +174,7 @@ try {
     allowedUrls,
     data_hashes,
     plain_json_response,
-    businessProgram.address,
+    registered_instance_b.address,
     id
   ).send({ from: aliceAccount.address }).wait();
 
@@ -209,49 +204,3 @@ try {
   }
 }
 await bb.destroy()
-
-// ====================== test update url ===========================
-// uncomment below to test update url
-// // update url to only https://github.com
-// const new_hashedUrls: bigint[] = [];
-// // pad with zeros to length 1024
-// const github_url = allowedUrls[2];
-// while (github_url.length < 1024) {
-//   github_url.push(0);
-// }
-// const frArray = github_url.map(b => new Fr(BigInt(b)));
-// const hashFr = await bb.poseidon2Hash(frArray);
-// const hashBigInt = BigInt(hashFr.toString());
-// new_hashedUrls.push(hashBigInt);
-// new_hashedUrls.push(hashBigInt);
-// new_hashedUrls.push(hashBigInt);
-
-// // Bob shouldn't be able to update the urls
-// try {
-//   result = await businessProgram.methods.update_allowed_url_hashes(new_hashedUrls).send({ from: bobAccount.address }).wait();
-//   console.log("Error: Bob update the urls");
-// } catch (error: unknown) {
-//   console.log("Admin verification succeed")
-// }
-// // Alice (admin) updated the urls to only github.com
-// result = await businessProgram.methods.update_allowed_url_hashes(new_hashedUrls).send({ from: aliceAccount.address }).wait();
-// console.log(result);
-// console.log("Alice updated the urls");
-
-// try {
-//   result = await attVerifierContract.methods.verify_attestation(
-//     public_key_x,
-//     public_key_y,
-//     hash,
-//     signature,
-//     requestUrls,
-//     allowedUrls,
-//     data_hashes,
-//     plain_json_response,
-//     businessProgram.address,
-//     id
-//   ).send({ from: aliceAccount.address }).wait();
-//   console.log("url update failed")
-// } catch {
-//   console.log("url update succeed")
-// }

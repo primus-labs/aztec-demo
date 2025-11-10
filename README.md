@@ -38,6 +38,9 @@ PXE_PROVER_ENABLED=1 aztec start --sandbox
 bash ./compile_verifier_and_program.sh
 ```
 
+> If you have modified `att_verifier` or `real_business_program`, please rerun this command.
+
+
 3. Prepare the client environment
 
 ```sh
@@ -48,7 +51,19 @@ npm install
 yarn
 ```
 
-4. Configure `.env` inside `dvc_client/`.
+
+4. Deploy contracts on Aztec chain.
+
+```sh
+# inside js_test/
+# deploy contracts (could be deployed once)
+yarn start:deploy
+```
+
+> If you have modified `att_verifier` or `real_business_program`, please rerun this command.
+
+
+5. Configure `.env` inside `dvc_client/`.
 
 - Copy `.env.example` to `.env`.
 - Set your `PRIVATE_KEY` start with `0x`.
@@ -59,9 +74,9 @@ yarn
 ***The previous steps are all preparatory.***
 
 
-5. Run zktls to generate attestation.
+6. Run zktls to generate attestation.
 
-For convenience: This step and the next step can be combined into one step (See 7).
+For convenience: This step and the next step can be combined into one step (See 8).
 
 ```sh
 # inside dvc_client/
@@ -70,14 +85,14 @@ node src/demo_binance.js
 
 This will generate a `binance-attestation.json` file if successed.
 
-6. Verify on Aztec chain.
+7. Verify on Aztec chain.
 
 ```sh
 # inside js_test/
-yarn start ../dvc_client/binance-attestation.json
+yarn start:verify ../dvc_client/binance-attestation.json
 ```
 
-7. Combine step 5 and step 6.
+8. Combine step 6 and step 7.
 
 ```sh
 bash ./run_zktls_and_verify_on_aztec.sh
