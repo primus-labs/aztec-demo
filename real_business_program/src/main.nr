@@ -19,7 +19,7 @@ pub contract BusinessProgram {
     #[storage]
     struct Storage<Context> {
         admin: PublicMutable<AztecAddress, Context>,
-        allowed_url_hashes: PublicMutable<[Field; 3], Context>,
+        allowed_url_hashes: PublicMutable<[Field; 1], Context>,
     }
 
     #[public]
@@ -30,7 +30,7 @@ pub contract BusinessProgram {
 
     #[public]
     #[initializer]
-    fn constructor(admin: AztecAddress, allowed_url_hashes: [Field; 3]) {
+    fn constructor(admin: AztecAddress, allowed_url_hashes: [Field; 1]) {
         assert(!admin.is_zero(), "invalid admin");
         storage.admin.write(admin);
         storage.allowed_url_hashes.write(allowed_url_hashes);
@@ -38,18 +38,18 @@ pub contract BusinessProgram {
 
     // TODO - allow update single url with index?
     #[public]
-    fn update_allowed_url_hashes(allowed_url_hashes: [Field; 3]) {
+    fn update_allowed_url_hashes(allowed_url_hashes: [Field; 1]) {
         assert(storage.admin.read().eq(context.msg_sender().unwrap()), "caller is not admin");
         storage.allowed_url_hashes.write(allowed_url_hashes);
     }
 
     #[public]
-    fn check_allowed_url(allowed_url_matches_hashes: [Field; 2]) {
-        let allowed_url_hashes: [Field; 3] = storage.allowed_url_hashes.read();
-        for i in 0..2 {
+    fn check_allowed_url(allowed_url_matches_hashes: [Field; 1]) {
+        let allowed_url_hashes: [Field; 1] = storage.allowed_url_hashes.read();
+        for i in 0..1 {
             let check_hash = allowed_url_matches_hashes[i];
             let mut found = false;
-            for j in 0..3 {
+            for j in 0..1 {
                 if allowed_url_hashes[j] == check_hash {
                     found = true;
                 }
@@ -62,8 +62,8 @@ pub contract BusinessProgram {
     // Opcode count: 200841, Total gates by opcodes: 405505, Circuit size: 415536
     #[private]
     fn verify(
-        plain_json_response: [BoundedVec<u8, MAX_CONTENT_LEN>; 2],
-        allowed_url_matches_hashes: [Field; 2],
+        plain_json_response: [BoundedVec<u8, MAX_CONTENT_LEN>; 1],
+        allowed_url_matches_hashes: [Field; 1],
     ) -> bool {
         // Each of the plaintexts must be parsed to json
         for i in 0..1 {

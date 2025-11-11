@@ -14,12 +14,11 @@ import { AztecAddress, createAztecNodeClient, getContractInstanceFromInstantiati
 import { Barretenberg, Fr } from "@aztec/bb.js";
 
 
-const MAX_RESPONSE_NUM = 2;
-const AllOWED_URL = ["https://api.binance.com/api/v3/account", "https://www.okx.com", "https://x.com"];
+const MAX_RESPONSE_NUM = 1;
+const AllOWED_URL = ["https://api.binance.com/api/v3/account"];
 const ATT_PATH = process.argv[2] ?? "testdata/eth_hash.json";
 
 const node = createAztecNodeClient("http://localhost:8080");
-
 const config = getPXEConfig();
 config.proverEnabled = true;
 const wallet = await TestWallet.create(node, config);
@@ -104,7 +103,6 @@ for (const url of AllOWED_URL) {
   const url_bytes = Array.from(new TextEncoder().encode(url));
   allowedUrls.push(url_bytes)
 }
-
 
 
 const id = Math.floor(Math.random() * 9999999999);

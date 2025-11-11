@@ -32,10 +32,10 @@ pub contract AttVerifier {
         public_key_y: [u8; 32],
         hash: [u8; 32],
         signature: [u8; 64],
-        request_urls: [BoundedVec<u8, MAX_URL_LEN>; 2],
-        allowed_urls: [BoundedVec<u8, MAX_URL_LEN>; 3],
-        data_hashes: [[u8; 32]; 2],
-        plain_json_response_contents: [BoundedVec<u8, MAX_CONTENT_LEN>; 2],
+        request_urls: [BoundedVec<u8, MAX_URL_LEN>; 1],
+        allowed_urls: [BoundedVec<u8, MAX_URL_LEN>; 1],
+        data_hashes: [[u8; 32]; 1],
+        plain_json_response_contents: [BoundedVec<u8, MAX_CONTENT_LEN>; 1],
         business_logic_address: AztecAddress,
         id: Field, // id for this attestation
     ) -> bool {
@@ -43,8 +43,8 @@ pub contract AttVerifier {
         assert(std::ecdsa_secp256k1::verify_signature(public_key_x, public_key_y, signature, hash));
 
         // 2. Check that the request_url starts with one of the allowed_urls
-        let mut allowed_url_matches: [Field; 2] = [0; 2];
-        for i in 0..2 {
+        let mut allowed_url_matches: [Field; 1] = [0; 1];
+        for i in 0..1 {
             // Safety: Get the index of the url in allowed_urls that matches request_url (unconstrained) and then check it
             let (found, url_index) =
                 unsafe { get_allowed_url_index(request_urls[i], allowed_urls) };
@@ -70,7 +70,7 @@ pub contract AttVerifier {
         }
 
         // 3. Hash plain_json_responses and check with input hashes
-        for i in 0..2 {
+        for i in 0..1 {
             let hash = sha256_var(
                 plain_json_response_contents[i].storage(),
                 plain_json_response_contents[i].len() as u64,
@@ -113,7 +113,7 @@ pub contract AttVerifier {
     #[contract_library_method]
     unconstrained fn get_allowed_url_index(
         request_url: BoundedVec<u8, MAX_URL_LEN>,
-        allowed_urls: [BoundedVec<u8, MAX_URL_LEN>; 3], // TODO this probably shouldn't have a fixed len
+        allowed_urls: [BoundedVec<u8, MAX_URL_LEN>; 1], // TODO this probably shouldn't have a fixed len
     ) -> (bool, u32) {
         let mut found = false;
         let mut index: u32 = 3050913689; // max u32 value to indicate "not found"

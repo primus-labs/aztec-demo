@@ -8,7 +8,7 @@ import { Barretenberg, Fr } from "@aztec/bb.js";
 import { getPXEConfig } from "@aztec/pxe/server";
 
 
-const AllOWED_URL = ["https://api.binance.com/api/v3/account", "https://www.okx.com", "https://x.com"];
+const AllOWED_URL = ["https://api.binance.com/api/v3/account"];
 
 const node = createAztecNodeClient("http://localhost:8080");
 const config = getPXEConfig();

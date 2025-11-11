@@ -7,8 +7,8 @@ pub contract BusinessProgram {
 
     #[private]
     fn verify(
-        plain_json_response: [BoundedVec<u8, MAX_CONTENT_LEN>; 2],
-        allowed_url_matches_hashes: [Field; 2],
+        plain_json_response: [BoundedVec<u8, MAX_CONTENT_LEN>; 1],
+        allowed_url_matches_hashes: [Field; 1],
     ) -> bool {
         // parse the data and verify custom condition
         true
