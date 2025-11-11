@@ -9,11 +9,11 @@ pub contract BusinessProgram {
     use aztec::state_vars::{public_immutable::PublicImmutable, public_mutable::PublicMutable};
 
     global MAX_URL_LEN: u32 = 200;
-    global MAX_CONTENT_LEN: u32 = 1800;
+    global MAX_CONTENT_LEN: u32 = 1000;
 
     global MAX_BALANCES: u32 = 10;
     global DECIMAL_SCALE: u32 = 8;
-    global BALANCE_THRESHOLD: u64 = 10000000; // 0.10000000
+    global BALANCE_THRESHOLD: u64 = 1000000000; // 1000000000
     
 
     #[storage]
@@ -81,41 +81,29 @@ pub contract BusinessProgram {
 
     #[contract_library_method]
     fn get_values(plaintext: BoundedVec<u8, MAX_CONTENT_LEN>) -> bool {
-        // TODO is this needed?
-        // // Safety: first sanitize the plaintext to ensure it is valid ASCII, then check this was done correctly
-        // let sanitized = unsafe { sanitize_ascii(plaintext) };
-        // // Uncommenting this check fails compilation
-        // verify_sanitized_ascii(plaintext, sanitized);
+        // Safety: first sanitize the plaintext to ensure it is valid ASCII, then check this was done correctly
+        let sanitized = unsafe { sanitize_ascii(plaintext) };
 
         
-        // let json = JSON2kb::parse_bounded_vec_json(plaintext);
-        // let key_balances: BoundedVec<u8, 8> = BoundedVec::from_array("balances".as_bytes());
        
-        // let balances = json.get_array(key_balances).unwrap();
-        let balances = JSON2kb::parse_bounded_vec_json(plaintext);
+        let balances = JSON2kb::parse_bounded_vec_json(sanitized);
         let balances_len = balances.get_length();
         
-        let key_asset: BoundedVec<u8, 5> = BoundedVec::from_array("asset".as_bytes());
-        let key_free: BoundedVec<u8, 4> = BoundedVec::from_array("free".as_bytes());
-        let key_locked: BoundedVec<u8, 6> = BoundedVec::from_array("locked".as_bytes());
-        let asset_eth: BoundedVec<u8, 10> = BoundedVec::from_array("ETH".as_bytes());
+        let key_bal: BoundedVec<u8, 7> = BoundedVec::from_array("balance".as_bytes());
+        let key_wallet: BoundedVec<u8, 10> = BoundedVec::from_array("walletName".as_bytes());
+        let wallet_spot: BoundedVec<u8, 18> = BoundedVec::from_array("Spot".as_bytes());
         let mut eth_check_passed = false;
          for i in 0..MAX_BALANCES {
           if i < balances.get_length() {
               let obj_i: JSON2kb = balances.get_object_from_array(i as Field).unwrap();
-              let asset_i: BoundedVec<u8, 10> = obj_i.get_string_from_path([key_asset]).unwrap();
+              let wallet_i: BoundedVec<u8, 18> = obj_i.get_string_from_path([key_wallet]).unwrap();
 
-              let asset_is_eth = asset_i == asset_eth;
-              if asset_is_eth {
-                  let free_i: BoundedVec<u8, 18> = obj_i.get_string_from_path([key_free]).unwrap();
-                  let locked_i: BoundedVec<u8, 18> = obj_i.get_string_from_path([key_locked]).unwrap();
+              let wallet_is_spot = wallet_i == wallet_spot;
+              if wallet_is_spot {
+                  let bal_i: BoundedVec<u8, 18> = obj_i.get_string_from_path([key_bal]).unwrap();
                   // Safety:
-                  let free_fixed = unsafe {parse_decimal_to_fixed(free_i, DECIMAL_SCALE) };
-                  // Safety:
-                  let locked_fixed = unsafe {parse_decimal_to_fixed(locked_i, DECIMAL_SCALE) };
-                  
-                  let total_balance = free_fixed + locked_fixed;
-                  eth_check_passed = eth_check_passed | (total_balance > BALANCE_THRESHOLD);
+                  let bal_fixed = unsafe {parse_decimal_to_fixed(bal_i, DECIMAL_SCALE) };
+                  eth_check_passed = eth_check_passed | (bal_fixed > BALANCE_THRESHOLD);
               }
           }
         }

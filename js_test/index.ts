@@ -18,9 +18,9 @@ import { error } from "console";
 
 
 const MAX_RESPONSE_NUM = 1;
-const AllOWED_URL = ["https://api.binance.com/api/v3/account"];
+const AllOWED_URL = ["https://api.binance.com/sapi/v1/asset/wallet/balance"];
 // const ATT_PATH = process.argv[2] ?? "testdata/eth_hash.json";
-const ATT_PATH = process.argv[2] ?? "testdata/binance-balances.json";
+const ATT_PATH = process.argv[2] ?? "testdata/wallet-balances.json";
 
 const node = createAztecNodeClient("http://localhost:8080");
 const config = getPXEConfig();
@@ -122,8 +122,8 @@ const plain_json_response: number[][] = [];
 if (obj.private_data && Array.isArray(obj.private_data.plain_json_response)) {
   for (const entry of obj.private_data.plain_json_response) {
     if (entry.id && entry.content) {
-      // const hashContent = entry.content;
-      const hashContent = JSON.stringify(JSON.parse(entry.content)["balances"]);
+      const hashContent = entry.content;
+      // const hashContent = JSON.stringify(JSON.parse(entry.content)["balances"]);
       // console.log("hashContent:", hashContent);
       const jsonBytes = Array.from(new TextEncoder().encode(hashContent));
       plain_json_response.push(jsonBytes);

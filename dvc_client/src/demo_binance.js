@@ -13,8 +13,8 @@ function getBinanaceRequestParams() {
     secret: secret
   });
 
-  let signParams = { recvWindow: recvWindow * 1000, omitZeroBalances: true };
-  let origRequest = exchange.sign('account', 'private', 'GET', signParams);
+  let signParams = { recvWindow: recvWindow * 1000, quoteAsset: "USDT" };
+  let origRequest = exchange.sign('asset/wallet/balance', 'sapi', 'GET', signParams);
   // console.log("origRequest:", origRequest);
 
   const requests = [
@@ -29,9 +29,9 @@ function getBinanaceRequestParams() {
   const responseResolves = [
     [
       {
-        keyName: "hash-of-balances",
+        keyName: "hash-of-response",
         parseType: "json",
-        parsePath: "$.balances",
+        parsePath: "$",
         op: "SHA256_EX"
       },
     ],

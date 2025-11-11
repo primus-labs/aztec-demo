@@ -5,7 +5,7 @@
 
 [Origin README](./README_ORIG.md).
 
-Prove that you hold spot ETH on Binance and that your ETH balance (free + locked) is greater than 0.1.
+Prove and verify that your spot wallet balance on Binance exceeds 10 USDT.
 
 ## Installation
 
